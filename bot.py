@@ -6,7 +6,7 @@ from telegram.ext import Application, CommandHandler, ContextTypes
 # НАСТРОЙКИ — МЕНЯЙТЕ ТОЛЬКО ЭТИ ПОЛЯ
 # ============================================================
 
-BOT_TOKEN = "8834854950:AAEnPiiIz9a8GhF9V5CuUxM6638AFXNPhL0"
+BOT_TOKEN = "8415223655:AAE2-Y3uc-xhwiDsvf-aEDznN-wC0dC990I"
 CHANNEL_URL = "https://t.me/leaderonthecouch"
 
 # ============================================================
