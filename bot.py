@@ -3,7 +3,7 @@ from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes
 
 # ============================================================
-# БОТ ДЛЯ MARKETING EVANGELIST
+# НАСТРОЙКИ — МЕНЯЙТЕ ТОЛЬКО ЭТИ ПОЛЯ
 # ============================================================
 
 BOT_TOKEN = "8834854950:AAEnPiiIz9a8GhF9V5CuUxM6638AFXNPhL0"
@@ -19,15 +19,15 @@ ZAYAVKA_FIRST_TEXT = (
     "А пока подписывайтесь на наш канал — там много полезного "
     "о нейромаркетинге!"
 )
-ZAYAVKA_FIRST_IMAGE = "https://picsum.photos/800/600"  # Тестовая картинка
+ZAYAVKA_FIRST_IMAGE = "https://picsum.photos/800/600"
 
 ZAYAVKA_SECOND_TEXT = (
     "👋 Напоминаем, что ваша заявка принята!\n\n"
     "Если у вас есть вопросы — наш менеджер скоро выйдет на связь.\n\n"
     "А пока загляните в наш канал — там много полезного о нейромаркетинге!"
 )
-ZAYAVKA_SECOND_IMAGE = None          # None = только текст, без картинки
-ZAYAVKA_DELAY_MINUTES = 5            # Через сколько минут второе сообщение
+ZAYAVKA_SECOND_IMAGE = None
+ZAYAVKA_DELAY_MINUTES = 5
 
 # ============================================================
 # СООБЩЕНИЯ ДЛЯ ФОРМЫ ОПЛАТЫ (?start=oplata)
@@ -51,8 +51,8 @@ OPLATA_SECOND_TEXT = (
     "✅ Подготовьте блокнот для заметок\n"
     "✅ Изучите программу курса в нашем канале"
 )
-OPLATA_SECOND_IMAGE = None           # None = только текст, без картинки
-OPLATA_DELAY_MINUTES = 10            # Через сколько минут второе сообщение
+OPLATA_SECOND_IMAGE = None
+OPLATA_DELAY_MINUTES = 10
 
 # ============================================================
 # КОД БОТА — НИЧЕГО НИЖЕ МЕНЯТЬ НЕ НУЖНО
@@ -72,9 +72,7 @@ MESSAGES = {
 }
 
 
-async def send_message(bot, chat_id: int, text: str, image: str | None,
-                       reply_markup):
-    """Отправляет сообщение — с картинкой или только текст."""
+async def send_message(bot, chat_id, text, image, reply_markup):
     if image:
         await bot.send_photo(chat_id=chat_id, photo=image,
                              caption=text, reply_markup=reply_markup)
@@ -83,47 +81,42 @@ async def send_message(bot, chat_id: int, text: str, image: str | None,
                                reply_markup=reply_markup)
 
 
-async def send_delayed(chat_id: int, form_type: str,
-                       context: ContextTypes.DEFAULT_TYPE):
-    """Ждёт нужное время и отправляет второе сообщение."""
+async def send_delayed(bot, chat_id, form_type):
     data = MESSAGES.get(form_type, MESSAGES["zayavka"])["second"]
     await asyncio.sleep(data["delay"] * 60)
-
-    keyboard = [[InlineKeyboardButton("📢 Подписаться на канал",
-                                      url=CHANNEL_URL)]]
-    await send_message(context.bot, chat_id,
-                       data["text"], data["image"],
+    keyboard = [[InlineKeyboardButton("📢 Подписаться на канал", url=CHANNEL_URL)]]
+    await send_message(bot, chat_id, data["text"], data["image"],
                        InlineKeyboardMarkup(keyboard))
 
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    """Обработчик /start — вызывается когда пользователь открывает бота."""
     chat_id = update.effective_chat.id
-
-    # Определяем тип формы из параметра ссылки (?start=zayavka / oplata)
     args = context.args
     form_type = args[0] if args and args[0] in MESSAGES else "zayavka"
 
-    # Кнопка «Подписаться на канал»
-    keyboard = [[InlineKeyboardButton("Подписаться на канал",
-                                      url=CHANNEL_URL)]]
+    keyboard = [[InlineKeyboardButton("📢 Подписаться на канал", url=CHANNEL_URL)]]
     reply_markup = InlineKeyboardMarkup(keyboard)
 
-    # Первое сообщение — сразу
     first = MESSAGES[form_type]["first"]
-    await send_message(context.bot, chat_id,
-                       first["text"], first["image"], reply_markup)
+    await send_message(context.bot, chat_id, first["text"], first["image"], reply_markup)
 
-    # Второе сообщение — через N минут (в фоне, не блокирует бота)
-    asyncio.create_task(send_delayed(chat_id, form_type, context))
+    # Передаём bot напрямую, чтобы не держать ссылку на context в фоновой задаче
+    asyncio.create_task(send_delayed(context.bot, chat_id, form_type))
 
 
-def main():
+async def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
-    print("Бот запущен. Нажмите Ctrl+C для остановки.")
-    app.run_polling()
+
+    async with app:
+        await app.start()
+        await app.updater.start_polling()
+        print("Бот запущен.")
+        # Держим бота запущенным до сигнала остановки
+        await asyncio.Event().wait()
+        await app.updater.stop()
+        await app.stop()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())
