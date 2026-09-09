@@ -27,7 +27,7 @@ ZAYAVKA_SECOND_TEXT = (
     "А пока загляните в наш канал — там много полезного о нейромаркетинге!"
 )
 ZAYAVKA_SECOND_IMAGE = None
-ZAYAVKA_DELAY_MINUTES = 5
+ZAYAVKA_DELAY_MINUTES = 3
 
 # ============================================================
 # СООБЩЕНИЯ ДЛЯ ФОРМЫ ОПЛАТЫ (?start=oplata)
